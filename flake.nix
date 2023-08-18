@@ -10,18 +10,42 @@
     let
       pkgs = nixpkgs.legacyPackages.${system};
       pkgs-tf = nixpkgs-tf.legacyPackages.${system};
-      merge = pkgs.lib.lists.fold pkgs.lib.recursiveUpdate { };
-      fmt = { formatter = pkgs.nixpkgs-fmt; };
 
-      python310 = import ./python310.nix pkgs;
-      python38 = import ./python38.nix pkgs;
-      bunker-prices = {
-        devShells.bunker-prices = python38.devShells.python38.overrideAttrs (final: prev: {
-          nativeBuildInputs = prev.nativeBuildInputs ++ [ pkgs.libffi pkgs-tf.terraform ];
-        });
+      python310 = pkgs.mkShell {
+        packages = [
+          pkgs.python310
+          pkgs.poetry
+        ];
       };
-      sbt191 = import ./sbt191.nix pkgs;
+
+      python38 = pkgs.mkShell {
+        packages = [
+          pkgs.python38
+          pkgs.poetry
+        ];
+      };
+
+      bunker-prices = pkgs.mkShell {
+        packages = [
+          pkgs.python38
+          pkgs.poetry
+          pkgs.libffi
+          pkgs-tf.terraform
+        ];
+      };
+
+      sbt191 = pkgs.mkShell
+        {
+          packages = [
+            pkgs.sbt
+          ];
+        };
     in
-    merge [ fmt python310 python38 sbt191 bunker-prices ]
+    {
+      formatter = pkgs.nixpkgs-fmt;
+      devShells = {
+        inherit python310 python38 bunker-prices sbt191;
+      };
+    }
   );
 }
